@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ gen("a title for {topic}") | html }}</title>
+</head>
+<body>
+    <h1>{{ gen("a main heading for {topic}") | html }}</h1>
+
+    <section>
+        <h2>Introduction</h2>
+        <p>{{ gen("an introduction paragraph about {topic}") | html }}</p>
+    </section>
+
+    {% for section in sections %}
+    <section>
+        <h2>{{ gen("a heading for the section about {section}") | html }}</h2>
+        <p>{{ gen("2-3 sentences about {section} in the context of {topic}") | html }}</p>
+    </section>
+    {% endfor %}
+
+    <footer>
+        <p>{{ gen("a concluding sentence about {topic}") | html }}</p>
+    </footer>
+</body>
+</html>

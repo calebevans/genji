@@ -1,0 +1,16 @@
+application:
+  name: {{ gen("a creative application name related to {domain}") | yaml }}
+  description: {{ gen("a one-line description of an app for {domain}") | yaml }}
+  version: "1.0.0"
+
+features:
+{% for feature in features %}
+  - name: {{ gen("a name for the {feature} feature") | yaml }}
+    description: {{ gen("describe the {feature} feature") | yaml }}
+    enabled: true
+{% endfor %}
+
+settings:
+  theme: {{ gen("a color theme name") | yaml }}
+  language: "en"
+  welcome_message: {{ gen("a friendly welcome message for {domain} users") | yaml }}

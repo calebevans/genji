@@ -1,0 +1,5 @@
+{
+  "title": {{ gen("a title for a report about {topic}") | json }},
+  "summary": {{ gen("2 sentence summary of {topic}") | json }},
+  "author": {{ gen("a fictional author name") | json }}
+}
