@@ -3,8 +3,6 @@
 # Genji
 
 [![PyPI version](https://img.shields.io/pypi/v/genji.svg)](https://pypi.org/project/genji/)
-[![Python versions](https://img.shields.io/pypi/pyversions/genji.svg)](https://pypi.org/project/genji/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 </div>
 
