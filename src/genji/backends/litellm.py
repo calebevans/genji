@@ -57,7 +57,7 @@ class LLMBackend:
 
         Args:
             model: Model name (e.g., "gpt-4o-mini", "claude-3-5-sonnet").
-                Falls back to GENJI_MODEL env var, defaults to "gpt-4o-mini".
+                Falls back to GENJI_MODEL env var. Required if env var not set.
             api_key: API key for the provider.
                 Falls back to GENJI_API_KEY env var or provider-specific env vars.
             base_url: Base URL for local LLMs (Ollama, vLLM, etc.).
@@ -67,8 +67,16 @@ class LLMBackend:
             add_system_prompt: Whether to add system instruction for concise responses.
                 Defaults to True. Set to False if you want full control over prompts.
             **kwargs: Additional arguments to pass to litellm.completion().
+
+        Raises:
+            ValueError: If model is not provided and GENJI_MODEL is not set.
         """
-        self.model = model or os.getenv("GENJI_MODEL", "gpt-4o-mini")
+        self.model = model or os.getenv("GENJI_MODEL")
+        if not self.model:
+            raise ValueError(
+                "Model name is required. Either pass model= parameter or "
+                "set GENJI_MODEL environment variable."
+            )
         self.api_key = api_key or os.getenv("GENJI_API_KEY")
         self.base_url = base_url or os.getenv("GENJI_BASE_URL")
         self.temperature = temperature

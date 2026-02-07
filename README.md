@@ -293,7 +293,7 @@ class LLMBackend:
         """Initialize the LiteLLM backend.
 
         Args:
-            model: Model name (defaults to "gpt-4o-mini").
+            model: Model name (required, or set GENJI_MODEL env var).
             api_key: API key (or set via environment variable).
             base_url: Base URL for custom endpoints.
             temperature: Temperature for generation (None uses provider default).
@@ -344,7 +344,7 @@ backend = MockBackend(response_fn=lambda prompt: f"Response to: {prompt}")
 
 | Parameter | Default | Environment Variable | Description |
 |-----------|---------|---------------------|-------------|
-| `model` | `gpt-4o-mini` | `GENJI_MODEL` | LLM model name |
+| `model` | **Required** | `GENJI_MODEL` | LLM model name (must be specified) |
 | `api_key` | None | `GENJI_API_KEY` | API key for provider |
 | `base_url` | None | `GENJI_BASE_URL` | Custom endpoint URL |
 | `temperature` | Provider default | N/A | Temperature for generation |
