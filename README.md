@@ -153,7 +153,7 @@ See the [full list of supported models](https://models.litellm.ai/).
 ```python
 backend = LLMBackend(
     model="gpt-4o-mini",
-    api_key="sk-...",  # or set OPENAI_API_KEY env var
+    api_key="sk-...",  # pragma: allowlist secret
 )
 ```
 
@@ -162,7 +162,7 @@ backend = LLMBackend(
 ```python
 backend = LLMBackend(
     model="claude-3-5-sonnet-20241022",
-    api_key="sk-ant-...",  # or set ANTHROPIC_API_KEY env var
+    api_key="sk-ant-...",  # pragma: allowlist secret
 )
 ```
 
@@ -171,7 +171,7 @@ backend = LLMBackend(
 ```python
 backend = LLMBackend(
     model="gemini/gemini-2.5-flash",
-    api_key="...",  # or set GEMINI_API_KEY env var
+    api_key="...",  # pragma: allowlist secret
 )
 ```
 
@@ -189,7 +189,7 @@ backend = LLMBackend(
 ```python
 backend = LLMBackend(
     model="azure/your-deployment-name",
-    api_key="...",
+    api_key="...",  # pragma: allowlist secret
     base_url="https://your-resource.openai.azure.com"
 )
 ```
