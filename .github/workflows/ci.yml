@@ -37,7 +37,7 @@ jobs:
         run: mypy --strict src/genji
 
   pre-commit:
-    name: Code quality checks
+    name: Pre-commit checks
     runs-on: ubuntu-latest
 
     steps:
