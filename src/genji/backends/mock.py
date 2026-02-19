@@ -74,3 +74,31 @@ class MockBackend:
             Sequence of mock generation responses.
         """
         return [self.generate(req) for req in requests]
+
+    async def agenerate(self, request: GenerationRequest) -> GenerationResponse:
+        """Generate a single mock completion asynchronously.
+
+        Delegates to the synchronous implementation since there is no real I/O.
+
+        Args:
+            request: The generation request.
+
+        Returns:
+            The mock generation response.
+        """
+        return self.generate(request)
+
+    async def agenerate_batch(
+        self, requests: Sequence[GenerationRequest]
+    ) -> Sequence[GenerationResponse]:
+        """Generate multiple mock completions asynchronously.
+
+        Delegates to the synchronous implementation since there is no real I/O.
+
+        Args:
+            requests: Sequence of generation requests.
+
+        Returns:
+            Sequence of mock generation responses.
+        """
+        return self.generate_batch(requests)

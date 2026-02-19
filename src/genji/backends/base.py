@@ -27,7 +27,7 @@ class GenerationResponse:
 
 
 class GenjiBackend(Protocol):
-    """Protocol for LLM backends."""
+    """Protocol for synchronous LLM backends."""
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         """Generate a single completion.
@@ -44,6 +44,34 @@ class GenjiBackend(Protocol):
         self, requests: Sequence[GenerationRequest]
     ) -> Sequence[GenerationResponse]:
         """Generate multiple completions (implement for efficiency).
+
+        Args:
+            requests: Sequence of generation requests.
+
+        Returns:
+            Sequence of generation responses in the same order.
+        """
+        ...
+
+
+class AsyncGenjiBackend(Protocol):
+    """Protocol for asynchronous LLM backends."""
+
+    async def agenerate(self, request: GenerationRequest) -> GenerationResponse:
+        """Generate a single completion asynchronously.
+
+        Args:
+            request: The generation request.
+
+        Returns:
+            The generation response.
+        """
+        ...
+
+    async def agenerate_batch(
+        self, requests: Sequence[GenerationRequest]
+    ) -> Sequence[GenerationResponse]:
+        """Generate multiple completions asynchronously.
 
         Args:
             requests: Sequence of generation requests.

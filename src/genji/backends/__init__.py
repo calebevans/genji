@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
-from .base import GenerationRequest, GenerationResponse, GenjiBackend
+from .base import AsyncGenjiBackend, GenerationRequest, GenerationResponse, GenjiBackend
 
-__all__ = ["GenjiBackend", "GenerationRequest", "GenerationResponse"]
+__all__ = [
+    "AsyncGenjiBackend",
+    "GenjiBackend",
+    "GenerationRequest",
+    "GenerationResponse",
+]

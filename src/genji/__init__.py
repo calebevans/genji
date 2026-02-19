@@ -17,6 +17,7 @@ Example:
 
 from __future__ import annotations
 
+from .backends.base import AsyncGenjiBackend
 from .backends.litellm import LLMBackend
 from .backends.mock import MockBackend
 from .exceptions import (
@@ -34,6 +35,7 @@ __all__ = [
     # Main API
     "Template",
     # Backends
+    "AsyncGenjiBackend",
     "LLMBackend",
     "MockBackend",
     # Exceptions
