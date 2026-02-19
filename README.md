@@ -221,6 +221,48 @@ template = Template("""
 result = template.render()
 ```
 
+### Async Support
+
+Every synchronous method has an async counterpart prefixed with `a`.
+This works with any async framework built on `asyncio` (FastAPI, aiohttp,
+etc.):
+
+```python
+import asyncio
+from genji import Template, LLMBackend
+
+backend = LLMBackend(model="gpt-4o-mini")
+template = Template("""
+{
+  "greeting": {{ gen("a friendly greeting for {name}") }},
+  "farewell": {{ gen("a warm farewell for {name}") }}
+}
+""", backend=backend, default_filter="json")
+
+async def main():
+    # Async rendering
+    result = await template.arender(name="Alice")
+
+    # Async render + JSON parse
+    data = await template.arender_json(name="Alice")
+
+    # Async file loading
+    t = await Template.afrom_file(
+        "report.json.genji", backend
+    )
+
+asyncio.run(main())
+```
+
+When the backend supports native async (as `LLMBackend` does via
+`litellm.acompletion`), all LLM calls use true async I/O.
+If a backend only implements the sync protocol, `arender` automatically
+falls back to running the sync calls in a thread via
+`asyncio.to_thread`.
+
+The synchronous API (`render`, `render_json`, `from_file`) is
+unchanged and continues to work exactly as before.
+
 ## API Reference
 
 ### Template
@@ -274,6 +316,21 @@ class Template:
         Raises:
             TemplateRenderError: If output is not valid JSON.
         """
+
+    async def arender(self, **context: Any) -> str:
+        """Async version of render()."""
+
+    async def arender_json(self, **context: Any) -> dict[str, Any]:
+        """Async version of render_json()."""
+
+    @classmethod
+    async def afrom_file(
+        cls,
+        path: str | Path,
+        backend: LLMBackend | MockBackend,
+        default_filter: str | None = None
+    ) -> Template:
+        """Async version of from_file()."""
 ```
 
 ### LLMBackend

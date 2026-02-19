@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genji"
-version = "0.1.0"
+version = "1.0.0"
 description = "Jinja2-based templating for LLM-generated structured output"
 readme = "README.md"
 license = "Apache-2.0"
@@ -59,3 +59,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+asyncio_mode = "auto"

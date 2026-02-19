@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -21,6 +22,10 @@ from .base import GenerationRequest, GenerationResponse
 class LLMBackend:
     """LLM backend using LiteLLM for multi-provider support.
 
+    Supports both synchronous and asynchronous generation. Use ``generate``/
+    ``generate_batch`` for sync code and ``agenerate``/``agenerate_batch``
+    for async code.
+
     Supports 100+ LLM providers through LiteLLM's unified API including:
     - OpenAI: model="gpt-4o"
     - Anthropic: model="claude-3-5-sonnet-20241022"
@@ -29,7 +34,6 @@ class LLMBackend:
     - And many more
     """
 
-    # System instruction to ensure concise, direct responses
     SYSTEM_INSTRUCTION = (
         "You are a content generator for structured output. "
         "Return ONLY the literal content requested. "
@@ -84,37 +88,23 @@ class LLMBackend:
         self.add_system_prompt = add_system_prompt
         self.kwargs = kwargs
 
-    def generate(self, request: GenerationRequest) -> GenerationResponse:
-        """Generate a single completion.
-
-        Args:
-            request: The generation request.
-
-        Returns:
-            The generation response.
-
-        Raises:
-            BackendError: If generation fails.
-        """
-        # Prepare messages with optional system prompt
+    def _build_litellm_kwargs(self, request: GenerationRequest) -> dict[str, Any]:
+        """Build the keyword arguments dict for a litellm completion call."""
         messages: list[dict[str, str]] = []
         if self.add_system_prompt:
             messages.append({"role": "system", "content": self.SYSTEM_INSTRUCTION})
         messages.append({"role": "user", "content": request.prompt})
 
-        # Prepare arguments for litellm
         litellm_kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             **self.kwargs,
         }
 
-        # Only set temperature if explicitly provided
         temperature_value = request.temperature or self.temperature
         if temperature_value is not None:
             litellm_kwargs["temperature"] = temperature_value
 
-        # Only set max_tokens if explicitly provided
         max_tokens_value = request.max_tokens or self.max_tokens
         if max_tokens_value is not None:
             litellm_kwargs["max_tokens"] = max_tokens_value
@@ -128,36 +118,58 @@ class LLMBackend:
         if request.stop:
             litellm_kwargs["stop"] = request.stop
 
+        return litellm_kwargs
+
+    @staticmethod
+    def _parse_response(response: Any) -> GenerationResponse:
+        """Extract a GenerationResponse from a litellm response object."""
+        choice = response.choices[0]
+        text = choice.message.content or ""
+        finish_reason = choice.finish_reason
+
+        usage = None
+        if hasattr(response, "usage") and response.usage:
+            usage = {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            }
+
+        return GenerationResponse(
+            text=text,
+            finish_reason=finish_reason,
+            usage=usage,
+        )
+
+    # ------------------------------------------------------------------
+    # Synchronous API
+    # ------------------------------------------------------------------
+
+    def generate(self, request: GenerationRequest) -> GenerationResponse:
+        """Generate a single completion.
+
+        Args:
+            request: The generation request.
+
+        Returns:
+            The generation response.
+
+        Raises:
+            BackendError: If generation fails.
+        """
+        litellm_kwargs = self._build_litellm_kwargs(request)
         try:
             response = litellm.completion(**litellm_kwargs)
-
-            # Extract response data
-            choice = response.choices[0]
-            text = choice.message.content or ""
-            finish_reason = choice.finish_reason
-
-            # Extract usage if available
-            usage = None
-            if hasattr(response, "usage") and response.usage:
-                usage = {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
-                    "total_tokens": response.usage.total_tokens,
-                }
-
-            return GenerationResponse(
-                text=text,
-                finish_reason=finish_reason,
-                usage=usage,
-            )
-
+            return self._parse_response(response)
+        except BackendError:
+            raise
         except Exception as e:
             raise BackendError(f"LiteLLM generation failed: {e}") from e
 
     def generate_batch(
         self, requests: Sequence[GenerationRequest]
     ) -> Sequence[GenerationResponse]:
-        """Generate multiple completions in parallel.
+        """Generate multiple completions in parallel using threads.
 
         Args:
             requests: Sequence of generation requests.
@@ -174,16 +186,13 @@ class LLMBackend:
         if len(requests) == 1:
             return [self.generate(requests[0])]
 
-        # Use ThreadPoolExecutor for parallel generation
         responses: list[GenerationResponse | None] = [None] * len(requests)
 
         with ThreadPoolExecutor(max_workers=min(len(requests), 10)) as executor:
-            # Submit all requests
             future_to_index = {
                 executor.submit(self.generate, req): i for i, req in enumerate(requests)
             }
 
-            # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
                 try:
@@ -193,5 +202,51 @@ class LLMBackend:
                         f"Batch generation failed for request {index}: {e}"
                     ) from e
 
-        # Type checker satisfaction - we know all are filled
         return [r for r in responses if r is not None]
+
+    # ------------------------------------------------------------------
+    # Asynchronous API
+    # ------------------------------------------------------------------
+
+    async def agenerate(self, request: GenerationRequest) -> GenerationResponse:
+        """Generate a single completion asynchronously.
+
+        Args:
+            request: The generation request.
+
+        Returns:
+            The generation response.
+
+        Raises:
+            BackendError: If generation fails.
+        """
+        litellm_kwargs = self._build_litellm_kwargs(request)
+        try:
+            response = await litellm.acompletion(**litellm_kwargs)
+            return self._parse_response(response)
+        except BackendError:
+            raise
+        except Exception as e:
+            raise BackendError(f"LiteLLM generation failed: {e}") from e
+
+    async def agenerate_batch(
+        self, requests: Sequence[GenerationRequest]
+    ) -> Sequence[GenerationResponse]:
+        """Generate multiple completions concurrently with asyncio.gather.
+
+        Args:
+            requests: Sequence of generation requests.
+
+        Returns:
+            Sequence of generation responses in the same order.
+
+        Raises:
+            BackendError: If any generation fails.
+        """
+        if not requests:
+            return []
+
+        if len(requests) == 1:
+            return [await self.agenerate(requests[0])]
+
+        return list(await asyncio.gather(*(self.agenerate(r) for r in requests)))
