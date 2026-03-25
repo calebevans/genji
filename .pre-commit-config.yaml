@@ -29,5 +29,5 @@ repos:
         args: [--strict]
         additional_dependencies:
           - jinja2>=3.1.0
-          - litellm>=1.0.0
+          - litellm>=1.0.0,!=1.82.7,!=1.82.8
         files: ^src/
